@@ -20,20 +20,20 @@ class FixPosTest(models.Model):
         lines = [self.env['account.move.line'] for _dummy in range(3)]
         valid_account_types = self._get_valid_payment_account_types()
         for line in self.move_id.line_ids:
-            _logger.debug("Procesando línea ID %s: Cuenta %s, Débito %s, Crédito %s", line.id, line.account_id.display_name, line.debit, line.credit)
+            _logger.info("Procesando línea ID %s: Cuenta %s, Débito %s, Crédito %s", line.id, line.account_id.display_name, line.debit, line.credit)
             if line.account_id in self._get_valid_liquidity_accounts():
                 if line.debit > 0:
                     lines[0] += line  # liquidity_lines
-                    _logger.info("Asignada a liquidity_lines: ID %s, Cuenta %s", line.id, line.account_id.display_name)
                 elif line.credit > 0:
                     lines[1] += line  # counterpart_lines
-                    _logger.info("Asignada a counterpart_lines: ID %s, Cuenta %s", line.id, line.account_id.display_name)
             elif line.account_id.account_type in valid_account_types or line.account_id == line.company_id.transfer_account_id:
-                lines[1] += line  # counterpart_lines
+                if line.debit > 0:
+                    lines[0] += line  # liquidity_lines
+                elif line.credit > 0:
+                    lines[1] += line  # counterpart_lines
             else:
                 lines[2] += line  # writeoff_lines
         
-        _logger.info("Resultado final: liquidity_lines %s, counterpart_lines %s, writeoff_lines %s", lines[0], lines[1], lines[2])
         return lines
 
     
